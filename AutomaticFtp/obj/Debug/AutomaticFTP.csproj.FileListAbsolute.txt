@@ -1,7 +1,0 @@
-C:\Projects\AutomaticFtp\AutomaticFTP\AutomaticFTP\obj\Debug\AutomaticFTP.csprojAssemblyReference.cache
-C:\Projects\AutomaticFtp\AutomaticFTP\AutomaticFTP\obj\Debug\AutomaticFTP.csproj.CoreCompileInputs.cache
-C:\Projects\AutomaticFtp\AutomaticFTP\AutomaticFTP\bin\Debug\AutomaticFTP.exe.config
-C:\Projects\AutomaticFtp\AutomaticFTP\AutomaticFTP\bin\Debug\AutomaticFTP.exe
-C:\Projects\AutomaticFtp\AutomaticFTP\AutomaticFTP\bin\Debug\AutomaticFTP.pdb
-C:\Projects\AutomaticFtp\AutomaticFTP\AutomaticFTP\obj\Debug\AutomaticFTP.exe
-C:\Projects\AutomaticFtp\AutomaticFTP\AutomaticFTP\obj\Debug\AutomaticFTP.pdb
