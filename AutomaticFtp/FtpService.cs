@@ -9,11 +9,11 @@ using System.Text;
 
 namespace AutomaticFTP
 {
-    public partial class Service1 : ServiceBase
+    public partial class FtpService : ServiceBase
     {
         private List<string> Subdirectories;
 
-        public Service1()
+        public FtpService()
         {
             InitializeComponent();
         }

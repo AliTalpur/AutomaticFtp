@@ -9,7 +9,7 @@
         {
 #if DEBUG
             //While debugging this section is used.
-            Service1 myService = new Service1();
+            var myService = new FtpService();
             myService.onDebug();
             System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
 #else
