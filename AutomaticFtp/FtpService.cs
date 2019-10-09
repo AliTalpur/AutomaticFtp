@@ -6,15 +6,25 @@ using System.Net;
 using System.Security.Permissions;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading;
+using AutomaticFTP.Models;
 
 namespace AutomaticFTP
 {
-    public partial class FtpService : ServiceBase
+    public interface IFtpService
     {
-        private List<string> Subdirectories;
+        void onDebug();
+    }
 
-        public FtpService()
+    public partial class FtpService : ServiceBase, IFtpService
+    {
+        private List<string> SubDirectories;
+        private IDataSource _dataSource;
+
+        public FtpService(IDataSource dataSource)
         {
+            _dataSource = dataSource;
+
             InitializeComponent();
         }
 
@@ -35,14 +45,16 @@ namespace AutomaticFTP
 
         private void Init()
         {
-            // TODO - Config
+            _dataSource.InitialiseDataSource();
+            _dataSource.WriteToDataSource();
+
             var directories = Directory.GetDirectories(ConfigurationManager.AppSettings["WatchDirectory"]);
 
             foreach(var directory in directories)
-                Subdirectories.Add(directory.Replace(ConfigurationManager.AppSettings["WatchDirectory"] + "\\", ""));
-            
+                SubDirectories.Add(directory.Replace(ConfigurationManager.AppSettings["WatchDirectory"] + "\\", ""));
         }
 
+        // Move FTP functionality to its own class.
         private byte[] CopyContents(string path)
         {
             byte[] fileContents;
@@ -56,17 +68,13 @@ namespace AutomaticFTP
 
         private void TransferWithFtp(object source, FileSystemEventArgs e)
         {
-            // TODO - Config
             var ftpAddress = ConfigurationManager.AppSettings["FtpAddress"];
 
             // Check for subdirectory, adjust path accordingly.
 
-
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(string.Concat(ftpAddress, e.Name));
             request.Method = WebRequestMethods.Ftp.UploadFile;
 
-            // This example assumes the FTP site uses anonymous logon.
-            // TODO - Config
             request.Credentials = 
                 new NetworkCredential(ConfigurationManager.AppSettings["Username"], ConfigurationManager.AppSettings["Password"]);
 
