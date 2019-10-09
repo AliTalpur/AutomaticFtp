@@ -1,6 +1,6 @@
 ﻿namespace AutomaticFTP
 {
-    partial class Service
+    partial class FtpService
     {
         /// <summary> 
         /// Required designer variable.
