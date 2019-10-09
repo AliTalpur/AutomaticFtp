@@ -1,2 +1,3 @@
 /AutomaticFtp/bin/*
-/.vs/*
+.vs/*
+/AutomaticFtp/obj/*
