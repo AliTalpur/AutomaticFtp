@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
+using System.Configuration;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Security.Permissions;
 using System.ServiceProcess;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace AutomaticFTP
 {
@@ -40,10 +36,10 @@ namespace AutomaticFTP
         private void Init()
         {
             // TODO - Config
-            var directories = Directory.GetDirectories(@"C:\DirectoryListenerTest");
+            var directories = Directory.GetDirectories(ConfigurationManager.AppSettings["WatchDirectory"]);
 
             foreach(var directory in directories)
-                Subdirectories.Add(directory.Replace(@"C:\DirectoryListenerTest\", ""));
+                Subdirectories.Add(directory.Replace(ConfigurationManager.AppSettings["WatchDirectory"] + "\\", ""));
             
         }
 
@@ -61,7 +57,7 @@ namespace AutomaticFTP
         private void TransferWithFtp(object source, FileSystemEventArgs e)
         {
             // TODO - Config
-            var ftpAddress = "FtpAddress";
+            var ftpAddress = ConfigurationManager.AppSettings["FtpAddress"];
 
             // Check for subdirectory, adjust path accordingly.
 
@@ -71,7 +67,8 @@ namespace AutomaticFTP
 
             // This example assumes the FTP site uses anonymous logon.
             // TODO - Config
-            request.Credentials = new NetworkCredential("username", "password");
+            request.Credentials = 
+                new NetworkCredential(ConfigurationManager.AppSettings["Username"], ConfigurationManager.AppSettings["Password"]);
 
             var fileContents = CopyContents(e.FullPath);
 
@@ -92,7 +89,7 @@ namespace AutomaticFTP
             using (FileSystemWatcher watcher = new FileSystemWatcher())
             {
                 // TODO - Config
-                watcher.Path = @"C:\DirectoryListenerTest";
+                watcher.Path = ConfigurationManager.AppSettings["WatchDirectory"];
 
                 // Watch for changes in LastAccess and LastWrite times, and
                 // the renaming of files or directories.
