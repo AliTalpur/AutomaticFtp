@@ -10,20 +10,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Configuration;
 
 namespace AutomaticFTP.Models
 {
     public interface IDataSource
     {
         void InitialiseDataSource();
-        void WriteToDataSource();
+        void WriteToDataSource(string fileName, string status);
         void ReadFromDataSource();
     }
 
     public class GoogleSheetsDataSource : IDataSource
     {
-        static string[] Scopes = { SheetsService.Scope.Spreadsheets };
-        static string ApplicationName = "AutomaticFtp";
+        private string[] Scopes = { SheetsService.Scope.Spreadsheets };
+        private string ApplicationName = "AutomaticFtp";
         private SheetsService service;
 
         public void InitialiseDataSource()
@@ -42,7 +43,7 @@ namespace AutomaticFTP.Models
                     "user",
                     CancellationToken.None,
                     new FileDataStore(credPath, true)).Result;
-                Console.WriteLine("Credential file saved to: " + credPath);
+                //Console.WriteLine("Credential file saved to: " + credPath);
             }
 
             // Create Google Sheets API service.
@@ -58,15 +59,16 @@ namespace AutomaticFTP.Models
             throw new NotImplementedException();
         }
 
-        public void WriteToDataSource()
+        public void WriteToDataSource(string fileName, string status)
         {
-            ValueRange vr = new ValueRange();
+            var rowValues = new List<object>() { fileName, status, DateTime.Now.ToString("MM/dd/yyyy hh:mm tt") };
+            ValueRange vr = new ValueRange
+            {
+                Values = new List<IList<object>> { rowValues }
+            };
 
-            var rowValues = new List<object>() { "NZB Name", DateTime.Now.ToString("MM/dd/yyyy hh:mm tt") };
-            vr.Values = new List<IList<object>> { rowValues };
-
-            var spreadsheetId = "";
-            var range = "Range Value";
+            var spreadsheetId = ConfigurationManager.AppSettings["SpreadSheetId"];
+            var range = ConfigurationManager.AppSettings["SpreadSheetRange"];
 
             var request = service.Spreadsheets.Values.Append(vr, spreadsheetId, range);
             request.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;

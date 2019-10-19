@@ -1,0 +1,12 @@
+Installing a Windows Service
+
+1. Open command prompt
+2. cd C:\Windows\Microsoft.NET\Framework\v4.0.30319  
+3. InstallUtil.exe 'C:\Program Files\{Folder}\AutomaticFtp\AutomaticFTP.exe'
+
+
+Uninstalling a Windows Service
+
+1. Open command prompt
+2. cd C:\Windows\Microsoft.NET\Framework\v4.0.30319  
+3. InstallUtil.exe -u 'C:\Program Files\{Folder}\AutomaticFtp\AutomaticFTP.exe'

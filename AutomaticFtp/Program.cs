@@ -1,5 +1,6 @@
 ﻿using AutomaticFTP.Models;
 using SimpleInjector;
+using System.ServiceProcess;
 
 namespace AutomaticFTP
 {
@@ -15,20 +16,20 @@ namespace AutomaticFTP
         {
             RegisterContainer();
 
+            var ftpService = container.GetInstance<IFtpService>();
 
 #if DEBUG
             //While debugging this section is used.
-            var myService = container.GetInstance<IFtpService>();
-            //var myService = new FtpService();
-            myService.onDebug();
+            ftpService.OnDebug();
             System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
 #else
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {
-                new Service1()
+                ftpService as FtpService
             };
             ServiceBase.Run(ServicesToRun);
+            //ftpService.OnStart();
 #endif
         }
 
@@ -36,8 +37,8 @@ namespace AutomaticFTP
         {
             container = new Container();
 
-            container.Register<IDataSource, GoogleSheetsDataSource>(Lifestyle.Singleton);
             container.Register<IFtpService, FtpService>(Lifestyle.Singleton);
+            container.Register<IDataSource, GoogleSheetsDataSource>(Lifestyle.Singleton);
 
             container.Verify();
         }
