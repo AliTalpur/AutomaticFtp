@@ -1,4 +1,4 @@
-﻿namespace AutomaticFTP
+﻿namespace AutomaticFtp
 {
     partial class FtpService
     {
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            this.ServiceName = "AutomaticFTP";
+            this.ServiceName = "AutomaticFtp";
         }
 
         #endregion

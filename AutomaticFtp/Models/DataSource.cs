@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Configuration;
 
-namespace AutomaticFTP.Models
+namespace AutomaticFtp.Models
 {
     public interface IDataSource
     {
@@ -23,35 +23,51 @@ namespace AutomaticFTP.Models
 
     public class GoogleSheetsDataSource : IDataSource
     {
+        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private string[] Scopes = { SheetsService.Scope.Spreadsheets };
         private string ApplicationName = "AutomaticFtp";
         private SheetsService service;
 
+        // TODO - Make this configurable.
+#if DEBUG
+        private readonly string _credentialsJsonPath = "credentials.json";
+#else
+        private readonly string _credentialsJsonPath = @"C:\Program Files\Jagman\AutomaticFtp\credentials.json";
+#endif
+
         public void InitialiseDataSource()
         {
-            UserCredential credential;
-
-            using (var stream =
-                new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
+            try
             {
-                // The file token.json stores the user's access and refresh tokens, and is created
-                // automatically when the authorization flow completes for the first time.
-                string credPath = "token.json";
-                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.Load(stream).Secrets,
-                    Scopes,
-                    "user",
-                    CancellationToken.None,
-                    new FileDataStore(credPath, true)).Result;
-                //Console.WriteLine("Credential file saved to: " + credPath);
+                UserCredential credential;
+
+                using (var stream =
+                    new FileStream(_credentialsJsonPath, FileMode.Open, FileAccess.Read))
+                {
+                    // The file token.json stores the user's access and refresh tokens, and is created
+                    // automatically when the authorization flow completes for the first time.
+                    string credPath = "token.json";
+                    credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                        GoogleClientSecrets.Load(stream).Secrets,
+                        Scopes,
+                        "user",
+                        CancellationToken.None,
+                        new FileDataStore(credPath, true)).Result;
+                    //Console.WriteLine("Credential file saved to: " + credPath);
+                }
+
+                // Create Google Sheets API service.
+                service = new SheetsService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = ApplicationName,
+                });
             }
-
-            // Create Google Sheets API service.
-            service = new SheetsService(new BaseClientService.Initializer()
+            catch (Exception ex)
             {
-                HttpClientInitializer = credential,
-                ApplicationName = ApplicationName,
-            });
+                _log.Error($"Setting up DataSource failed, {ex}");
+            }
         }
 
         public void ReadFromDataSource()

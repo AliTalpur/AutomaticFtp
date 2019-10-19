@@ -8,9 +8,9 @@ using System.Security.Permissions;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading;
-using AutomaticFTP.Models;
+using AutomaticFtp.Models;
 
-namespace AutomaticFTP
+namespace AutomaticFtp
 {
     public interface IFtpService
     {
@@ -20,6 +20,8 @@ namespace AutomaticFTP
 
     public partial class FtpService : ServiceBase, IFtpService
     {
+        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private string _watchDirectory = ConfigurationManager.AppSettings["WatchDirectory"];
         private string _ftpAddress = ConfigurationManager.AppSettings["FtpAddress"];
         private string _username = ConfigurationManager.AppSettings["Username"];
@@ -27,30 +29,33 @@ namespace AutomaticFTP
 
         private List<string> _subdirectories = new List<string>();
         private IDataSource _dataSource;
+        private IDirectoryService _directoryService;
 
-        public FtpService(IDataSource dataSource)
+        public FtpService(IDataSource dataSource, IDirectoryService directoryService)
         {
             _dataSource = dataSource;
-
+            _directoryService = directoryService;
         }
 
         public void OnDebug()
         {
-            OnStart(null);
+            OnStart();
         }
 
         public void OnStart()
         {
-
-            InitializeComponent();
-            InitalizeSubdirectories();
-            _dataSource.InitialiseDataSource();
-
             OnStart(null);
         }
 
         protected override void OnStart(string[] args)
         {
+            _log.Info("Starting Service.");
+            //InitializeComponent();
+
+            _log.Info("Creating DataSource.");
+            //_dataSource.InitialiseDataSource();
+
+            _log.Info("Starting new Thread for Listener.");
             ThreadStart work = ListenToFolder;
             Thread thread = new Thread(work);
             thread.Start();
@@ -73,70 +78,65 @@ namespace AutomaticFTP
 
         private void TransferWithFtp(object source, FileSystemEventArgs e)
         {
-            FileInfo fInfo = new FileInfo(e.FullPath);
-            while (IsFileLocked(fInfo))
+            _log.Info("Begin Ftp Transfer.");
+
+            try
             {
-                Thread.Sleep(500);
+                FileInfo fInfo = new FileInfo(e.FullPath);
+                while (IsFileLocked(fInfo))
+                {
+                    _log.Info("File still downloading...");
+                    Thread.Sleep(500);
+                }
+
+                var directorySplit = e.Name.Split('\\');
+                var category = directorySplit[0];
+                var fileName = directorySplit[1];
+
+                var absoluteFtpUri = ConfigureFtpAddress(e.FullPath) + "/" + fileName;
+
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(absoluteFtpUri);
+                request.Method = WebRequestMethods.Ftp.UploadFile;
+
+                request.Credentials =
+                    new NetworkCredential(_username, _password);
+
+                _log.Info("Copying File Contents.");
+                var fileContents = CopyContents(e.FullPath);
+
+                _log.Info("Uploading File.");
+                using (Stream requestStream = request.GetRequestStream())
+                {
+                    requestStream.Write(fileContents, 0, fileContents.Length);
+                }
+                _log.Info("File Uploaded.");
+
+                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                {
+                    //_dataSource.WriteToDataSource(category, fileName);
+                    _log.Info($"Upload File Complete, status {response.StatusDescription}");
+                }
             }
-
-            var directorySplit = e.Name.Split('\\');
-            var category = directorySplit[0];
-            var fileName = directorySplit[1];
-
-            var absoluteFtpUri = ConfigureFtpAddress(e.FullPath) + "/" + fileName;
-
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(absoluteFtpUri);
-            request.Method = WebRequestMethods.Ftp.UploadFile;
-
-            request.Credentials =
-                new NetworkCredential(_username, _password);
-
-            var fileContents = CopyContents(e.FullPath);
-
-            using (Stream requestStream = request.GetRequestStream())
+            catch (Exception ex)
             {
-                requestStream.Write(fileContents, 0, fileContents.Length);
+                _log.Error($"Exception occurred, {ex}");
             }
-
-            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-            {
-                _dataSource.WriteToDataSource(category, fileName);
-                Console.WriteLine($"Upload File Complete, status {response.StatusDescription}");
-            }
+            
         }
 
         private string ConfigureFtpAddress(string filePath)
         {
             // Check for subdirectory, adjust path accordingly.
-            var subdirectory = GetSubdirectoryFromFilePath(filePath);
-            subdirectory = subdirectory.Replace('\\', '/');
+            var subdirectory = _directoryService.GetSubdirectoryFromFilePath(filePath);
+            _log.Info($"Subdirectory : {subdirectory}");
 
             return _ftpAddress + subdirectory;
-        }
-
-        private void InitalizeSubdirectories()
-        {
-            var directoryInfo = new DirectoryInfo(_watchDirectory).GetDirectories();
-
-            foreach(var directory in directoryInfo)
-                _subdirectories.Add(RemoveWatchDirectory(directory.FullName));
-        }
-
-        private string GetSubdirectoryFromFilePath(string filePath)
-        {
-            var subdirectoryName = RemoveWatchDirectory(Path.GetDirectoryName(filePath));
-            
-            return _subdirectories.FirstOrDefault(sb => sb == subdirectoryName);
-        }
-
-        private string RemoveWatchDirectory(string directoryPath)
-        {
-            return directoryPath.Replace(_watchDirectory, "");
         }
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
         private void ListenToFolder()
         {
+            _log.Info("Creating FileSystemWatcher.");
             var watcher = new FileSystemWatcher
             {
                 Path = _watchDirectory,
@@ -162,6 +162,8 @@ namespace AutomaticFTP
 
             // Begin watching.
             watcher.EnableRaisingEvents = true;
+
+            _log.Info("Creating FileSystemWatcher Completed.");
         }
 
         private bool IsFileLocked(FileInfo file)

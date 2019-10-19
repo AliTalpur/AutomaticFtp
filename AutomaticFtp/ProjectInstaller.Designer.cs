@@ -1,4 +1,4 @@
-﻿namespace AutomaticFTP
+﻿namespace AutomaticFtp
 {
     partial class ProjectInstaller
     {

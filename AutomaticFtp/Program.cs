@@ -1,8 +1,8 @@
-﻿using AutomaticFTP.Models;
+﻿using AutomaticFtp.Models;
 using SimpleInjector;
 using System.ServiceProcess;
 
-namespace AutomaticFTP
+namespace AutomaticFtp
 {
     static class Program
     {
@@ -17,6 +17,7 @@ namespace AutomaticFTP
             RegisterContainer();
 
             var ftpService = container.GetInstance<IFtpService>();
+            var directoryService = container.GetInstance<IDirectoryService>();
 
 #if DEBUG
             //While debugging this section is used.
@@ -39,6 +40,9 @@ namespace AutomaticFTP
 
             container.Register<IFtpService, FtpService>(Lifestyle.Singleton);
             container.Register<IDataSource, GoogleSheetsDataSource>(Lifestyle.Singleton);
+
+            // TODO - Unable to turn to scoped.
+            container.Register<IDirectoryService, DirectoryService>(Lifestyle.Singleton);
 
             container.Verify();
         }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Configuration;
 
-namespace AutomaticFTP.Models
+namespace AutomaticFfp.Models
 {
     public class Configuration
     {
